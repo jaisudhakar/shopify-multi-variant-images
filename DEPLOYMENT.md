@@ -69,6 +69,9 @@ The Docker image runs `prisma migrate deploy` on start.
 | `SCOPES`             | `read_products,write_products`                                                   |
 | `DATABASE_URL`       | Only when using PostgreSQL/MySQL                                                 |
 | `NODE_ENV`           | `production`                                                                     |
+| `SUPPORT_EMAIL`      | Shown on `/support` and `/privacy` (required for the App Store listing)          |
+| `COMPANY_NAME`       | Optional — your business name, shown in the privacy policy                       |
+| `BILLING_TEST`       | Optional — `true` forces test charges everywhere (staging only)                  |
 
 Example with Fly.io:
 
@@ -98,7 +101,7 @@ npm run deploy
 ```
 
 `shopify app deploy` creates a new **app version** containing the app
-configuration (URLs, scopes, webhooks, metafield definition), the theme app
+configuration (URLs, scopes, webhooks), the theme app
 extension and the admin link, and releases it to all stores that have the app
 installed. You can see versions under Partner Dashboard → your app →
 **Versions**.
@@ -142,18 +145,52 @@ for review. Checklist for this app:
 - [x] Minimal scopes: `read_products,write_products`.
 - [x] Lightweight storefront script (~4 KB gzipped) to keep the Lighthouse
       impact low.
-- [ ] App listing: name, 1200×1200 app icon, short description, detailed
-      description, at least 3 screenshots (1600×900), optional demo video.
-- [ ] Privacy policy URL (state that no customer data is collected; only
-      shop sessions are stored).
-- [ ] Support email/URL and emergency developer contact.
-- [ ] Pricing. If you charge, add Shopify Billing API plans (managed pricing
-      in the Partner Dashboard is the simplest option) — the app is free as
-      shipped.
-- [ ] Testing instructions for reviewers, e.g. _"Open any product with a Color
-      option → Products → click the product → assign images to each colour →
-      Save → Theme setup → Enable app embed → view the product page and switch
-      colours."_ Include a dev store with demo products if possible.
+- [x] Billing through the Shopify Billing API: **$5 USD / 30 days with a
+      30-day free trial** (`app/billing.ts`). Development stores, including
+      reviewers' stores, automatically get test charges.
+- [x] Privacy policy page at `/privacy` and help/FAQ page at `/support`.
+- [x] No "enter your shop domain" login form (Shopify-managed install only).
+- [ ] App listing: copy, pricing, screenshots and reviewer instructions are
+      drafted in **[APP_STORE_LISTING.md](./APP_STORE_LISTING.md)** — paste
+      them in and add your icon and screenshots.
+- [ ] `SUPPORT_EMAIL` set on the server; emergency developer contact entered
+      in the listing.
+
+## 7. Billing
+
+Pricing lives in `app/billing.ts`:
+
+```ts
+export const MONTHLY_PLAN = "Pro";
+export const PLAN_PRICE = 5;
+export const PLAN_CURRENCY = "USD";
+export const TRIAL_DAYS = 30;
+```
+
+How it works:
+
+1. After install, every app page checks for an active subscription. Without
+   one, the merchant lands on **Plan**, which shows the price and a
+   **Start 30-day free trial** button.
+2. The button opens Shopify's charge-approval page. After approving, the
+   merchant returns to the app. Nothing is charged until the trial ends; then
+   $5 is added to their Shopify invoice every 30 days.
+3. **Plan** shows the days left in the trial (or the next billing date) and
+   a **Cancel plan** button. Uninstalling also stops billing automatically.
+4. The trial is once per store: cancelling and subscribing again only offers
+   the days left from the first trial.
+5. Development stores can't be charged, so they get test subscriptions
+   (marked "Test"). Every other store is billed for real.
+
+Changing the price later: edit `app/billing.ts`, redeploy the server, and
+update the listing's pricing section. Existing subscribers stay on their
+current price until they subscribe again.
+
+Keep **Managed pricing** turned off in the Partner Dashboard — this app uses
+the Billing API, and the two can't be combined.
+
+> Shopify pays out app revenue to the payout details in your Partner account
+> (Partner Dashboard → **Payouts**); add them before you go live.
 
 Review typically takes a few business days; reviewers will email you through
 the Partner Dashboard with any required changes.

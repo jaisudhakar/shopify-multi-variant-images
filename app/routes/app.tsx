@@ -4,9 +4,22 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate } from "../shopify.server";
+import { MONTHLY_PLAN } from "../billing";
+import { isTestStore } from "../billing.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { admin, billing, redirect, session } =
+    await authenticate.admin(request);
+
+  // Every app page needs an active subscription (or free trial), except the
+  // Plan page, which is where merchants start one.
+  if (new URL(request.url).pathname !== "/app/plan") {
+    await billing.require({
+      plans: [MONTHLY_PLAN],
+      isTest: await isTestStore(admin, session.shop),
+      onFailure: async () => redirect("/app/plan"),
+    });
+  }
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
@@ -20,6 +33,7 @@ export default function App() {
       <s-app-nav>
         <s-link href="/app">Products</s-link>
         <s-link href="/app/setup">Theme setup</s-link>
+        <s-link href="/app/plan">Plan</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>

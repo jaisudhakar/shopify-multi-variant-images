@@ -35,6 +35,15 @@ shopper selected.
 - Contextual save bar, toasts, and a theme setup page with one-click links
   into the theme editor.
 
+**Billing & App Store**
+
+- $5 USD/month after a 30-day free trial, charged through Shopify's Billing
+  API (`app/billing.ts`). The trial is once per store; development stores get
+  test charges automatically.
+- **Plan** page with trial days left, next billing date and Cancel.
+- Public `/privacy` and `/support` pages for the App Store listing; draft
+  listing copy in [APP_STORE_LISTING.md](./APP_STORE_LISTING.md).
+
 **Storefront (theme app extension — no theme code edits)**
 
 - **App embed "Variant images"** — filters the theme's own product gallery
@@ -102,6 +111,9 @@ app/
   routes/app.products.$id.tsx      colour → images editor
   routes/app.products.link.tsx     target of the admin "More actions" link
   routes/app.setup.tsx             theme setup instructions + deep links
+  routes/app.plan.tsx              subscription / free trial / cancel
+  routes/privacy.tsx, support.tsx  public pages for the App Store listing
+  billing.ts, billing.server.ts    plan price + trial, test-store detection
   routes/webhooks.compliance.tsx   mandatory GDPR webhooks
 extensions/
   variant-image-gallery/           theme app extension (app embed + app block)
