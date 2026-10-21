@@ -1,0 +1,84 @@
+{%- comment -%}
+  App embed: filters the theme's own product gallery so only the images
+  assigned to the selected colour are shown.
+{%- endcomment -%}
+{%- if template.name == 'product' and product and product.metafields['$app'].variant_images.value -%}
+  <div hidden data-mvi-root data-mvi-mode="theme">
+    {%- render 'mvi-product-data',
+      product: product,
+      fallback: block.settings.fallback,
+      include_shared: block.settings.include_shared,
+      item_selector: block.settings.item_selector
+    -%}
+  </div>
+  {%- if block.settings.prevent_flash -%}
+    {%- comment -%}
+      Hide the theme gallery until the script has applied the filter so
+      shoppers never see images of other colours flash on page load.
+    {%- endcomment -%}
+    <style>
+      html:not(.mvi-ready) .product__media-list,
+      html:not(.mvi-ready) .thumbnail-slider,
+      html:not(.mvi-ready) [data-mvi-gallery-hide] {
+        visibility: hidden;
+      }
+    </style>
+    <script>
+      setTimeout(function () {
+        document.documentElement.classList.add('mvi-ready');
+      }, 3000);
+    </script>
+  {%- endif -%}
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Variant images",
+  "target": "body",
+  "javascript": "variant-images.js",
+  "stylesheet": "variant-images.css",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Shows only the images assigned to the selected colour in your theme's product gallery. Assign images in the Multi Variant Images app."
+    },
+    {
+      "type": "select",
+      "id": "fallback",
+      "label": "Colours without assigned images show",
+      "options": [
+        { "value": "all", "label": "All product images" },
+        { "value": "shared", "label": "Only images not assigned to a colour" }
+      ],
+      "default": "all"
+    },
+    {
+      "type": "checkbox",
+      "id": "include_shared",
+      "label": "Also show images that aren't assigned to any colour",
+      "info": "Useful for size charts or lifestyle photos that apply to every colour.",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "prevent_flash",
+      "label": "Hide gallery until filtered",
+      "info": "Prevents other colours' images from flashing while the page loads.",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Advanced"
+    },
+    {
+      "type": "text",
+      "id": "item_selector",
+      "label": "Gallery item selector",
+      "info": "Leave empty for Dawn and most Shopify themes. For other themes, enter the CSS selector of the gallery slides and thumbnails, e.g. .product-gallery__item"
+    }
+  ]
+}
+{% endschema %}

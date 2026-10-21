@@ -1,0 +1,56 @@
+# Shopify app configuration for "Multi Variant Images".
+#
+# Run `npm run config:link` once to connect this project to the app you
+# created in the Shopify Partner Dashboard / Dev Dashboard. The CLI fills in
+# `client_id`, `name`, `application_url` and the redirect URLs for you.
+# See DEPLOYMENT.md for the full publishing walkthrough.
+client_id = ""
+name = "Multi Variant Images"
+application_url = "https://example.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+include_config_on_deploy = true
+
+[access_scopes]
+# read/write products is needed to read product media + options and to store
+# the colour -> images mapping in a product metafield.
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products"
+
+[auth]
+redirect_urls = ["https://example.com/api/auth"]
+
+# App-owned metafield that stores the colour -> media mapping for a product.
+# Namespace resolves to `$app`, key `variant_images`. The theme app extension
+# reads it with: product.metafields["$app"].variant_images.value
+[product.metafields.app.variant_images]
+name = "Variant images"
+description = "Images assigned to each colour variant (managed by Multi Variant Images)."
+type = "json"
+access.admin = "merchant_read"
+access.storefront = "public_read"
+
+[webhooks]
+api_version = "2026-10"
+
+  # Handled by: /app/routes/webhooks.app.uninstalled.tsx
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = ["app/uninstalled"]
+
+  # Handled by: /app/routes/webhooks.app.scopes_update.tsx
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+  # Mandatory compliance topics for public (App Store) apps.
+  # Handled by: /app/routes/webhooks.compliance.tsx
+  # See: https://shopify.dev/docs/apps/build/privacy-law-compliance
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/compliance"
+  compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+
+[pos]
+embedded = false

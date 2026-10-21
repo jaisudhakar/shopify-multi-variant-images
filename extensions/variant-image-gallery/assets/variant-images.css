@@ -1,0 +1,223 @@
+/* Theme gallery filtering (app embed) */
+.mvi-hidden {
+  display: none !important;
+}
+
+/* App gallery block */
+.mvi-gallery {
+  --mvi-gap: 10px;
+  display: grid;
+  gap: var(--mvi-gap);
+  width: 100%;
+}
+
+.mvi-gallery--thumbs-left {
+  grid-template-columns: 84px minmax(0, 1fr);
+}
+
+.mvi-gallery--thumbs-left .mvi-gallery__viewport {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.mvi-gallery--thumbs-left .mvi-gallery__thumbs {
+  grid-column: 1;
+  grid-row: 1;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.mvi-gallery__viewport {
+  position: relative;
+  min-width: 0;
+}
+
+.mvi-gallery__track {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  border-radius: var(--mvi-radius, 0);
+}
+
+.mvi-gallery__track::-webkit-scrollbar {
+  display: none;
+}
+
+.mvi-gallery__slide {
+  flex: 0 0 100%;
+  aspect-ratio: var(--mvi-ratio, 1);
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.mvi-gallery__slide[hidden],
+.mvi-gallery__thumb[hidden] {
+  display: none;
+}
+
+.mvi-gallery__slide img,
+.mvi-gallery__slide video,
+.mvi-gallery__slide iframe,
+.mvi-gallery__slide model-viewer {
+  width: 100%;
+  height: 100%;
+  object-fit: var(--mvi-fit, contain);
+  display: block;
+  border: 0;
+}
+
+.mvi-gallery__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.mvi-gallery__arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mvi-gallery__arrow--prev {
+  left: 10px;
+}
+
+.mvi-gallery__arrow--next {
+  right: 10px;
+}
+
+.mvi-gallery__viewport:hover .mvi-gallery__arrow,
+.mvi-gallery__arrow:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .mvi-gallery__arrow {
+    opacity: 1;
+  }
+}
+
+.mvi-gallery__counter {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.mvi-gallery__counter:empty,
+.mvi-gallery--single .mvi-gallery__arrow,
+.mvi-gallery--single .mvi-gallery__thumbs {
+  display: none;
+}
+
+.mvi-gallery__thumbs {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.mvi-gallery__thumb {
+  flex: 0 0 76px;
+}
+
+.mvi-gallery__thumb button {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: calc(var(--mvi-radius, 0px) / 2);
+  background: none;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    opacity 0.15s,
+    border-color 0.15s;
+}
+
+.mvi-gallery__thumb button:hover,
+.mvi-gallery__thumb.is-active button {
+  opacity: 1;
+}
+
+.mvi-gallery__thumb.is-active button {
+  border-color: currentColor;
+  box-shadow: 0 0 0 1px currentColor;
+}
+
+.mvi-gallery__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mvi-gallery__badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+@media (max-width: 749px) {
+  .mvi-gallery--thumbs-left {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mvi-gallery--thumbs-left .mvi-gallery__viewport,
+  .mvi-gallery--thumbs-left .mvi-gallery__thumbs {
+    grid-column: 1;
+    grid-row: auto;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .mvi-gallery__thumb {
+    flex-basis: 60px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mvi-gallery__track {
+    scroll-behavior: auto;
+  }
+}

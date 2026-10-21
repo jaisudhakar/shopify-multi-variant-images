@@ -1,0 +1,12 @@
+# Adds "Manage colour images" to the More actions menu on the product details
+# page in the Shopify admin. Shopify appends the product `id` to the URL.
+[[extensions]]
+name = "t:link_name"
+description = "t:link_description"
+handle = "product-admin-link"
+type = "admin_link"
+uid = "7a46990f-8b63-462b-b11d-acb2bea36773"
+
+  [[extensions.targeting]]
+  target = "admin.product-details.action.link"
+  url = "/app/products/link"
