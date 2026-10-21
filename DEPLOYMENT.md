@@ -105,7 +105,23 @@ installed. You can see versions under Partner Dashboard → your app →
 
 ## 6. Choose a distribution method
 
-Partner Dashboard → your app → **Distribution**:
+Until you do this, installing on any store other than your own dev stores
+shows _"This app can't be installed yet. The app developer needs to select a
+distribution method first."_ This is a dashboard setting, not code.
+
+Open the app in the **Dev Dashboard** (<https://dev.shopify.com>, or Partner
+Dashboard → **Apps** → your app). On the app's Home, find the **Distribution**
+card → **Select distribution method** → choose one → confirm. The choice
+can't be changed later.
+
+| You want                                 | Choose              | Review needed |
+| ---------------------------------------- | ------------------- | ------------- |
+| Any merchant can install it (all stores) | Public distribution | Yes           |
+| One store, or stores in one Plus org     | Custom distribution | No            |
+
+With **Public distribution**, the app installs on development stores right
+away; other merchants' stores can install it once Shopify approves your App
+Store submission.
 
 ### Custom distribution (one store / one Plus organisation)
 
@@ -155,4 +171,8 @@ with `npm run deploy` — merchants get the new version automatically.
 - **Product page doesn't filter images** — make sure the app embed is enabled
   in the published theme, and see the troubleshooting section on the app's
   **Theme setup** page.
+- **"This app can't be installed yet … select a distribution method"** —
+  see step 6: pick a distribution method on the app's Distribution card.
+- **Public app installs on dev stores but not on a merchant's store** — the
+  App Store review hasn't been approved yet; submit the listing (step 6).
 - **"Unable to find an app" in the CLI** — run `npm run config:link` again.
