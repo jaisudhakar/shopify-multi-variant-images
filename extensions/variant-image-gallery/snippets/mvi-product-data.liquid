@@ -7,7 +7,12 @@
   - include_shared: {Boolean} Append images not assigned to any colour
   - item_selector: {String} (theme gallery only) CSS selector of gallery items
 {%- endcomment -%}
-{%- assign mvi_config = product.metafields['$app'].variant_images.value -%}
+{%- liquid
+  assign mvi_config = product.metafields.multi_variant_images.config.value
+  unless mvi_config
+    assign mvi_config = product.metafields['$app'].variant_images.value
+  endunless
+-%}
 <script type="application/json" data-mvi-data>
   {
     "productId": {{ product.id | json }},
@@ -35,7 +40,7 @@
     ],
     "media": [
       {%- for media in product.media -%}
-        {{ media.id | json }}
+        { "id": {{ media.id | json }}, "src": {{ media.preview_image.src | json }} }
         {%- unless forloop.last -%},{%- endunless -%}
       {%- endfor -%}
     ],

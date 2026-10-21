@@ -1,7 +1,13 @@
 // Shared (client + server) types and helpers for the colour -> images mapping.
 
-export const METAFIELD_NAMESPACE = "$app";
-export const METAFIELD_KEY = "variant_images";
+// Stored in a regular (non app-reserved) namespace so every theme can read it
+// in Liquid as product.metafields.multi_variant_images.config.value
+export const METAFIELD_NAMESPACE = "multi_variant_images";
+export const METAFIELD_KEY = "config";
+
+// Location used by the first release; still read so older saves keep working.
+export const LEGACY_METAFIELD_NAMESPACE = "$app";
+export const LEGACY_METAFIELD_KEY = "variant_images";
 
 /** Option names that are treated as "colour" when auto-detecting. */
 export const COLOR_OPTION_NAMES = [
@@ -62,6 +68,8 @@ export interface ProductMedia {
   alt: string;
   url: string | null;
   mediaContentType: string;
+  /** True while Shopify is still processing a freshly uploaded file. */
+  processing?: boolean;
 }
 
 export function isColorOptionName(name: string) {

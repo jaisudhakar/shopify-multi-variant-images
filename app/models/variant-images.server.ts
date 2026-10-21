@@ -1,6 +1,8 @@
 import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
 
 import {
+  LEGACY_METAFIELD_KEY,
+  LEGACY_METAFIELD_NAMESPACE,
   METAFIELD_KEY,
   METAFIELD_NAMESPACE,
   buildConfig,
@@ -30,6 +32,16 @@ async function gql<T>(
     throw new Error(json.errors.map((error) => error.message).join(", "));
   }
   return json.data as T;
+}
+
+function readConfig(product: {
+  metafield: { value: string } | null;
+  legacyMetafield: { value: string } | null;
+}) {
+  return (
+    parseConfig(product.metafield?.value) ??
+    parseConfig(product.legacyMetafield?.value)
+  );
 }
 
 export function toProductGid(id: string) {
@@ -65,7 +77,10 @@ const PRODUCTS_QUERY = `#graphql
             id
           }
         }
-        metafield(namespace: "$app", key: "variant_images") {
+        metafield(namespace: "multi_variant_images", key: "config") {
+          value
+        }
+        legacyMetafield: metafield(namespace: "$app", key: "variant_images") {
           value
         }
       }
@@ -91,6 +106,7 @@ interface ProductsQueryData {
       mediaCount: { count: number } | null;
       options: { id: string; name: string; optionValues: { id: string }[] }[];
       metafield: { value: string } | null;
+      legacyMetafield: { value: string } | null;
     }[];
     pageInfo: {
       hasNextPage: boolean;
@@ -121,7 +137,7 @@ export async function listProducts(
     pageInfo: data.products.pageInfo,
     products: data.products.nodes.map((product) => {
       const colorOption = detectColorOption(product.options);
-      const config = parseConfig(product.metafield?.value);
+      const config = readConfig(product);
       return {
         id: product.id,
         title: product.title,
@@ -166,6 +182,7 @@ const PRODUCT_QUERY = `#graphql
         nodes {
           id
           alt
+          status
           mediaContentType
           preview {
             image {
@@ -174,7 +191,10 @@ const PRODUCT_QUERY = `#graphql
           }
         }
       }
-      metafield(namespace: "$app", key: "variant_images") {
+      metafield(namespace: "multi_variant_images", key: "config") {
+        value
+      }
+      legacyMetafield: metafield(namespace: "$app", key: "variant_images") {
         value
       }
     }
@@ -203,11 +223,13 @@ interface ProductQueryData {
       nodes: {
         id: string;
         alt: string | null;
+        status: string;
         mediaContentType: string;
         preview: { image: { url: string } | null } | null;
       }[];
     };
     metafield: { value: string } | null;
+    legacyMetafield: { value: string } | null;
   } | null;
 }
 
@@ -235,9 +257,10 @@ export async function getProduct(admin: Admin, productId: string) {
     alt: item.alt ?? "",
     url: item.preview?.image?.url ?? null,
     mediaContentType: item.mediaContentType,
+    processing: item.status === "UPLOADED" || item.status === "PROCESSING",
   }));
 
-  const config = parseConfig(product.metafield?.value);
+  const config = readConfig(product);
   const selectedOption =
     options.find((option) => option.id === config?.optionId) ??
     options.find((option) => option.name === config?.optionName) ??
@@ -331,6 +354,7 @@ export async function saveVariantImages(
     },
   );
   assertNoUserErrors(data.metafieldsSet);
+  await deleteLegacyMetafield(admin, ownerId);
 
   let variantsUpdated = 0;
   if (syncVariantImages) {
@@ -341,20 +365,151 @@ export async function saveVariantImages(
 }
 
 export async function clearVariantImages(admin: Admin, productId: string) {
+  const ownerId = toProductGid(productId);
   const data = await gql<{ metafieldsDelete: UserErrors }>(
     admin,
     DELETE_METAFIELD_MUTATION,
     {
       metafields: [
-        {
-          ownerId: toProductGid(productId),
-          namespace: METAFIELD_NAMESPACE,
-          key: METAFIELD_KEY,
-        },
+        { ownerId, namespace: METAFIELD_NAMESPACE, key: METAFIELD_KEY },
       ],
     },
   );
   assertNoUserErrors(data.metafieldsDelete);
+  await deleteLegacyMetafield(admin, ownerId);
+}
+
+/** Removes the mapping saved by the first release, if there is one. */
+async function deleteLegacyMetafield(admin: Admin, ownerId: string) {
+  try {
+    await gql(admin, DELETE_METAFIELD_MUTATION, {
+      metafields: [
+        {
+          ownerId,
+          namespace: LEGACY_METAFIELD_NAMESPACE,
+          key: LEGACY_METAFIELD_KEY,
+        },
+      ],
+    });
+  } catch {
+    // Nothing to clean up.
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Uploading new images                                                       */
+/* -------------------------------------------------------------------------- */
+
+const STAGED_UPLOADS_MUTATION = `#graphql
+  mutation MviStagedUploads($input: [StagedUploadInput!]!) {
+    stagedUploadsCreate(input: $input) {
+      stagedTargets {
+        url
+        resourceUrl
+        parameters {
+          name
+          value
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const ADD_MEDIA_MUTATION = `#graphql
+  mutation MviAddMedia($product: ProductUpdateInput!, $media: [CreateMediaInput!]) {
+    productUpdate(product: $product, media: $media) {
+      product {
+        media(last: 50) {
+          nodes {
+            id
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+interface StagedUploadsData {
+  stagedUploadsCreate: UserErrors & {
+    stagedTargets: {
+      url: string;
+      resourceUrl: string;
+      parameters: { name: string; value: string }[];
+    }[];
+  };
+}
+
+interface AddMediaData {
+  productUpdate: UserErrors & {
+    product: { media: { nodes: { id: string }[] } } | null;
+  };
+}
+
+export const MAX_UPLOAD_FILES = 20;
+export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+/**
+ * Uploads image files to Shopify and adds them to the product's media.
+ * Returns the new media IDs in the same order as `files`.
+ */
+export async function uploadProductImages(
+  admin: Admin,
+  productId: string,
+  files: File[],
+  alt: string,
+) {
+  const images = files
+    .filter((file) => file.type.startsWith("image/"))
+    .slice(0, MAX_UPLOAD_FILES);
+  if (!images.length) throw new Error("Choose JPG, PNG, WEBP or GIF images");
+  const tooBig = images.find((file) => file.size > MAX_UPLOAD_BYTES);
+  if (tooBig) throw new Error(`${tooBig.name} is larger than 20 MB`);
+
+  const staged = await gql<StagedUploadsData>(admin, STAGED_UPLOADS_MUTATION, {
+    input: images.map((file) => ({
+      filename: file.name,
+      mimeType: file.type,
+      fileSize: String(file.size),
+      resource: "IMAGE",
+      httpMethod: "POST",
+    })),
+  });
+  assertNoUserErrors(staged.stagedUploadsCreate);
+  const targets = staged.stagedUploadsCreate.stagedTargets;
+
+  await Promise.all(
+    targets.map(async (target, index) => {
+      const form = new FormData();
+      for (const { name, value } of target.parameters) form.append(name, value);
+      form.append("file", images[index], images[index].name);
+      const response = await fetch(target.url, { method: "POST", body: form });
+      if (!response.ok) {
+        throw new Error(`Upload of ${images[index].name} failed`);
+      }
+    }),
+  );
+
+  const added = await gql<AddMediaData>(admin, ADD_MEDIA_MUTATION, {
+    product: { id: toProductGid(productId) },
+    media: targets.map((target) => ({
+      originalSource: target.resourceUrl,
+      mediaContentType: "IMAGE",
+      alt,
+    })),
+  });
+  assertNoUserErrors(added.productUpdate);
+
+  // New media is appended to the end of the product's media list.
+  const nodes = added.productUpdate.product?.media.nodes ?? [];
+  return nodes.slice(-targets.length).map((node) => node.id);
 }
 
 /* -------------------------------------------------------------------------- */

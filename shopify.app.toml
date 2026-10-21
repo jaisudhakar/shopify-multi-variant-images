@@ -22,15 +22,9 @@ scopes = "read_products,write_products"
 [auth]
 redirect_urls = ["https://example.com/api/auth"]
 
-# App-owned metafield that stores the colour -> media mapping for a product.
-# Namespace resolves to `$app`, key `variant_images`. The theme app extension
-# reads it with: product.metafields["$app"].variant_images.value
-[product.metafields.app.variant_images]
-name = "Variant images"
-description = "Images assigned to each colour variant (managed by Multi Variant Images)."
-type = "json"
-access.admin = "merchant_read"
-access.storefront = "public_read"
+# The colour -> images mapping is stored per product in the metafield
+# multi_variant_images.config (type json). It uses a regular namespace so any
+# theme can read it in Liquid; the theme app extension does exactly that.
 
 [webhooks]
 api_version = "2026-10"

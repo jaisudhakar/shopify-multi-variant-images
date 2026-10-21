@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "npm run build:storefront && react-router build",
-    "build:storefront": "esbuild storefront/variant-images.js --minify --target=es2017 --legal-comments=none --outfile=extensions/variant-image-gallery/assets/variant-images.js",
+    "build:storefront": "esbuild storefront/variant-images.js --minify --target=es2017 --legal-comments=none --define:MVI_MODE='\"theme\"' --outfile=extensions/variant-image-gallery/assets/variant-images-theme.js && esbuild storefront/variant-images.js --minify --target=es2017 --legal-comments=none --define:MVI_MODE='\"block\"' --outfile=extensions/variant-image-gallery/assets/variant-images-block.js",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",

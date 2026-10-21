@@ -138,7 +138,7 @@ export default function Index() {
                       {product.colorOptionName} ({product.colorCount})
                     </s-text>
                   ) : (
-                    <s-text color="subdued">—</s-text>
+                    <s-badge tone="warning">No colour option</s-badge>
                   )}
                 </s-table-cell>
                 <s-table-cell>{product.mediaCount}</s-table-cell>

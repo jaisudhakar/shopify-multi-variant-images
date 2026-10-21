@@ -140,7 +140,7 @@ for review. Checklist for this app:
 - [x] Storefront changes only through a theme app extension (no theme file
       edits, works with Online Store 2.0 themes, uninstall leaves the theme clean).
 - [x] Minimal scopes: `read_products,write_products`.
-- [x] Lightweight storefront script (~3 KB gzipped) to keep the Lighthouse
+- [x] Lightweight storefront script (~4 KB gzipped) to keep the Lighthouse
       impact low.
 - [ ] App listing: name, 1200×1200 app icon, short description, detailed
       description, at least 3 screenshots (1600×900), optional demo video.

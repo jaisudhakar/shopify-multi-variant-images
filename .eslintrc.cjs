@@ -19,7 +19,12 @@ module.exports = {
     commonjs: true,
     es6: true,
   },
-  ignorePatterns: ["!**/.server", "!**/.client"],
+  ignorePatterns: [
+    "!**/.server",
+    "!**/.client",
+    // Minified output of storefront/variant-images.js
+    "extensions/variant-image-gallery/assets/*.js",
+  ],
 
   // Base config
   extends: ["eslint:recommended"],

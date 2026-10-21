@@ -2,7 +2,15 @@
   App embed: filters the theme's own product gallery so only the images
   assigned to the selected colour are shown.
 {%- endcomment -%}
-{%- if template.name == 'product' and product and product.metafields['$app'].variant_images.value -%}
+{%- liquid
+  if template.name == 'product' and product
+    assign mvi_config = product.metafields.multi_variant_images.config.value
+    unless mvi_config
+      assign mvi_config = product.metafields['$app'].variant_images.value
+    endunless
+  endif
+-%}
+{%- if mvi_config -%}
   <div hidden data-mvi-root data-mvi-mode="theme">
     {%- render 'mvi-product-data',
       product: product,
@@ -29,13 +37,15 @@
       }, 3000);
     </script>
   {%- endif -%}
+{%- elsif template.name == 'product' -%}
+  <!-- Multi Variant Images: no colour images saved for this product yet -->
 {%- endif -%}
 
 {% schema %}
 {
   "name": "Variant images",
   "target": "body",
-  "javascript": "variant-images.js",
+  "javascript": "variant-images-theme.js",
   "stylesheet": "variant-images.css",
   "enabled_on": {
     "templates": ["product"]

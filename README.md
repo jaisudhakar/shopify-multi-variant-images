@@ -13,10 +13,17 @@ shopper selected.
 **Admin (embedded app)**
 
 - Product list with search showing which products are set up.
-- Per-product editor: pick the option that controls images (auto-detects
-  `Color`, `Colour`, `Farbe`, `Couleur`, …), then click images to assign them
-  to each colour. The order you click is the display order; "Make main" moves
-  an image to the front.
+- Per-product editor that works **one colour at a time**:
+  1. Pick a colour from the colour chips (each shows how many images it has).
+  2. Click product images to add them to that colour, or **upload new images
+     straight into the colour**. The selected images appear in an ordered
+     strip — drag or use the arrows to reorder; the first one is the main
+     image.
+  - "Also in: Blue" labels show which other colours already use an image,
+    "Only show unassigned" hides images that are already used, and "Copy
+    images from" reuses another colour's selection.
+- The option that controls images is auto-detected (`Color`, `Colour`,
+  `Farbe`, `Couleur`, …) and can be changed under Settings.
 - The same image can belong to several colours. Videos and 3D models are
   supported too.
 - **Auto-assign** matches images to colours by file name or alt text
@@ -36,13 +43,18 @@ shopper selected.
 - **App block "Variant image gallery"** — a self-contained gallery (main image,
   thumbnails below/left, arrows, swipe, counter) for themes whose gallery can't
   be filtered.
-- Detects colour changes from radio buttons, dropdowns, swatches, the `?variant=`
-  URL, and theme variant events; re-applies automatically when a theme
-  re-renders its gallery.
+- Detects colour changes from radio buttons, dropdowns, button/link swatches,
+  the `?variant=` URL, and theme variant events; re-applies automatically when
+  a theme re-renders its gallery.
+- Finds gallery images by media ID (Dawn and Shopify themes) **or by image
+  file name**, so custom themes work without configuration; refreshes
+  Swiper, Flickity and Slick sliders after filtering.
+- Debug mode: add `?mvi_debug=1` to a product URL to log the detected colour
+  and outline the gallery images found.
 - Fallback for colours without images: show all images, or only "shared"
   images. Optionally append shared images (size charts, lifestyle shots) to
   every colour.
-- ~3 KB gzipped JavaScript, no dependencies.
+- ~4 KB gzipped JavaScript per bundle, no dependencies.
 
 ## How it works
 
@@ -50,19 +62,21 @@ shopper selected.
 Admin app (React Router + Polaris)            Storefront (theme app extension)
 ──────────────────────────────────           ─────────────────────────────────
 Merchant assigns images per colour  ──►  product metafield  ──►  Liquid outputs JSON
-                                         $app.variant_images       │
+                                multi_variant_images.config        │
                                          (type: json)              ▼
                                                            variant-images.js shows
                                                            only the selected colour's
                                                            images
 ```
 
-The mapping is stored in an app-owned product metafield (declared in
-`shopify.app.toml`), so it lives with the product in Shopify — the app's own
-database only holds OAuth sessions.
+The mapping is stored in a product metafield (`multi_variant_images.config`,
+type `json`), so it lives with the product in Shopify — the app's own database
+only holds OAuth sessions. A regular namespace is used so every theme can read
+it in Liquid; mappings saved by the first release under `$app.variant_images`
+are still read and are moved on the next save.
 
 ```jsonc
-// product.metafields["$app"].variant_images
+// product.metafields.multi_variant_images.config
 {
   "version": 1,
   "optionId": "gid://shopify/ProductOption/123",
@@ -93,7 +107,8 @@ extensions/
   variant-image-gallery/           theme app extension (app embed + app block)
   product-admin-link/              admin link on the product details page
 storefront/variant-images.js       readable source of the storefront script
-                                   (`npm run build:storefront` minifies it into the extension)
+                                   (`npm run build:storefront` builds variant-images-theme.js
+                                   and variant-images-block.js into the extension)
 shopify.app.toml                   app config, scopes, metafield definition, webhooks
 ```
 

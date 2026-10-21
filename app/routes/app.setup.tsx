@@ -72,9 +72,19 @@ export default function Setup() {
       <s-section heading="Troubleshooting">
         <s-unordered-list>
           <s-list-item>
-            Images don&apos;t change: in the app embed settings, adjust the
-            “Gallery item selector” to match your theme&apos;s gallery items, or
-            use Option B.
+            Check the basics: the product has a “Color” option, you clicked Save
+            in this app, and the app embed is on in your{" "}
+            <s-text type="strong">published</s-text> theme.
+          </s-list-item>
+          <s-list-item>
+            Open the product page with <code>?mvi_debug=1</code> added to the
+            URL and open the browser console. The app logs the colour it
+            detected and outlines the gallery images it found in green.
+          </s-list-item>
+          <s-list-item>
+            Images still don&apos;t change: in the app embed settings, enter
+            your theme&apos;s “Gallery item selector” (for example{" "}
+            <code>.product-gallery__item</code>), or use Option B.
           </s-list-item>
           <s-list-item>
             A colour shows all images: no images are assigned to that colour
